@@ -1,0 +1,132 @@
+<!DOCTYPE html> <html> <head> <title>Equiangular Unwarp</title>
+
+	<style> 
+		body { margin: 0; background-color: #000000; overflow: hidden; } 
+		button { font-family:georgia; border:0; background:#222; color:#fff; padding:0.2em 0.5em; cursor:pointer; border-radius:3px }
+	</style>
+
+	<!-- All three of these javascript libs are required for unwarping -->
+	<script type="text/javascript" src="lib/three.min.js"></script>
+	<script type="text/javascript" src="lib/webgl-utils.js"></script>
+	<script type="text/javascript" src="lib/equiangular-unwarp.js"></script>
+	
+	<script>
+
+	var videoSource = new Object();
+	// video source dimensions - video source set to 1920 x 1080 with
+	// 1920 x 1080 real-time video doesn't work with current browser
+	// versions - however, video source set to 1280 x 720 works with
+	// 1920 x 1080 real-time video source - quicktime simply scales
+	// down the stream (naturally, with loss of detail) - otoh
+	// video source set to 1920 x 1080 with 1920 x 1080 movie file
+	// works fine
+	//videoSource.width = 640;
+	//videoSource.height = 360;
+	//videoSource.width = 1280;
+	//videoSource.height = 720;
+	videoSource.width = 1920;
+	videoSource.height = 1080;
+
+	// browser will attempt to use live video if this is commented
+	// out or assigned as 'undefined', otherwise it will loop the 
+	// specified movie
+	//
+	// live video works with chrome v24 and firefox v18 - safari v6
+	// doesn't support getusermedia()
+	//
+	// movie files work with chrome 24 - firefox doesn't accept mp4
+	// files - safari 6 stutters - browser must access this page via
+	// a web server
+	//
+	videoSource.movieFilePath = "./PanoramicMovie-H264.mp4";
+	//videoSource.movieFilePath = undefined;
+
+	window.onload = main;
+
+	// Obtains a warped video stream.
+    function main() {
+
+		var video = document.createElement( 'video' );
+		
+		if ( videoSource.movieFilePath != undefined ) {
+		
+			// movie file
+		
+			video.preload = "auto";
+			video.loop = "loop";
+			video.src = videoSource.movieFilePath;
+			video.addEventListener( "canplay", function() {
+				video.play();
+				//console.log( "video.videoHeight: " + video.videoHeight );
+				//console.log( "video.videoWidth: " + video.videoWidth );
+				init( video );
+			}, true );
+		
+		} else {
+		
+			// live video
+		
+			window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
+			navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+		
+			//navigator.getUserMedia( { video: true }, function( stream ) {
+			navigator.getUserMedia( { video: { mandatory: { minWidth: videoSource.width, minHeight: videoSource.height } } }, function( stream ) {
+				if ( navigator.mozGetUserMedia !== undefined ) {
+					video.mozSrcObject = stream;
+				} else {
+					video.src = window.URL.createObjectURL( stream );
+				}
+				video.addEventListener( "canplay", function() {
+					video.play();
+					//console.log( "video.videoHeight: " + video.videoHeight );
+					//console.log( "video.videoWidth: " + video.videoWidth );
+					init( video );
+				});
+				
+			}, function ( error ) {
+		
+				alert( 'Webcam required' );
+				console.log( error );
+			} );
+		}
+   }
+
+	// Creates and invokes the video unwarper.
+	function init( video ) {
+
+		// create a canvas to render unwarped video to
+		var canvas = document.createElement( 'canvas' );
+		//canvas.width = videoSource.width;
+		//canvas.height = videoSource.height;
+		canvas.width = 1280;
+		canvas.height = 720;
+
+		// pass video and canvas elements to unwarper
+		var unwarp = new EquiangularUnwarp( video, canvas );
+
+		document.body.appendChild( canvas );
+
+		// create a button for stopping / starting the unwarping
+		var button = document.createElement( 'button' );
+		button.textContent = "STOP";
+		button.addEventListener( 'click', function ( event ) {
+			if ( this.textContent == "STOP" ) {
+				this.textContent = "START";
+				unwarp.stop();
+			} else {
+				this.textContent = "STOP";
+				unwarp.start();
+			}
+			
+			}, false );
+
+		document.body.appendChild( button );
+
+		// start unwarping video and rendering to canvas
+		unwarp.start();
+	};
+
+	</script>
+	
+</head> <body>
+</body> </html>
