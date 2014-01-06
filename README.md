@@ -26,3 +26,5 @@ Usage
 
 See [index.html](index.html) for an example of using the code. Using the default settings the code will display a static movie file included with this distribution. See [the comments](index.html#L30-42) in the code for how to reconfigure the example to display a live video stream from a local video device or a remote WebRTC video source.
 
+**This example must be installed on a webserver to work.** Use Google Chrome v26 or greater to access the example.
+
